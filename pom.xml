@@ -1,0 +1,444 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+    <name>Zeebe Kafka Exporter</name>
+    <groupId>io.zeebe.kafka</groupId>
+    <artifactId>zeebe-kafka-exporter</artifactId>
+    <version>2.1.1-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <parent>
+        <groupId>org.camunda.community</groupId>
+        <artifactId>community-hub-release-parent</artifactId>
+        <version>2.1.0</version>
+    </parent>
+
+    <properties>
+        <version.zeebe>8.7.14</version.zeebe>
+        <version.exporter.protobuf>2.0.1</version.exporter.protobuf>
+        <version.kafka>3.7.0</version.kafka>
+        <!-- micrometer version see https://github.com/camunda/camunda/blob/main/parent/pom.xml -->
+        <version.micrometer>1.15.2</version.micrometer>
+        <version.log4j>2.25.2</version.log4j>
+        <version.zeebe.testcontainers>3.6.7</version.zeebe.testcontainers>
+        <version.junit>5.14.0</version.junit>
+        <version.testcontainers>1.21.3</version.testcontainers>
+
+        <plugin.version.maven-jar>3.4.2</plugin.version.maven-jar>
+        <plugin.version.maven-fmt>2.29</plugin.version.maven-fmt>
+        <version.java>17</version.java>
+
+        <!-- release parent settings -->
+        <nexus.snapshot.repository>https://artifacts.camunda.com/artifactory/zeebe-io-snapshots/
+        </nexus.snapshot.repository>
+        <nexus.release.repository>https://artifacts.camunda.com/artifactory/zeebe-io/
+        </nexus.release.repository>
+
+        <!-- disable jdk8 javadoc checks on release build -->
+        <additionalparam>-Xdoclint:none</additionalparam>
+    </properties>
+
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>io.zeebe.kafka</groupId>
+                <artifactId>zeebe-kafka-exporter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.zeebe</groupId>
+                <artifactId>zeebe-exporter-protobuf</artifactId>
+                <version>${version.exporter.protobuf}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.camunda</groupId>
+                <artifactId>zeebe-bom</artifactId>
+                <version>${version.zeebe}</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+
+            <!-- Apache Kafka Client -->
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${version.kafka}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${version.micrometer}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>io.zeebe</groupId>
+                <artifactId>zeebe-test-container</artifactId>
+                <version>${version.zeebe.testcontainers}</version>
+                <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.agrona</groupId>
+                        <artifactId>agrona</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.junit}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${version.testcontainers}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.assertj</groupId>
+                <artifactId>assertj-core</artifactId>
+                <version>3.27.6</version>
+                <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-slf4j2-impl</artifactId>
+                <version>${version.log4j}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${version.log4j}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.awaitility</groupId>
+                <artifactId>awaitility</artifactId>
+                <version>4.3.0</version>
+            </dependency>
+
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+
+        <dependency>
+            <groupId>io.camunda</groupId>
+            <artifactId>zeebe-exporter-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.zeebe</groupId>
+            <artifactId>zeebe-exporter-protobuf</artifactId>
+        </dependency>
+
+        <!-- Apache Kafka Client -->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>3.19.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>io.camunda</groupId>
+            <artifactId>zeebe-util</artifactId>
+            <version>${version.zeebe}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>io.camunda</groupId>
+            <artifactId>zeebe-client-java</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.zeebe</groupId>
+            <artifactId>zeebe-test-container</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j2-impl</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.4</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${plugin.version.maven-jar}</version>
+                <configuration>
+                    <useDefaultManifestFile>false</useDefaultManifestFile>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.14.1</version>
+                <configuration>
+                    <release>${version.java}</release>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <descriptors>
+                        <descriptor>assembly-jar-with-dependencies.xml</descriptor>
+                    </descriptors>
+                    <outputDirectory>${project.build.directory}</outputDirectory>
+                    <archive>
+                        <manifest>
+                            <AddDefaultImplementationEntries>true</AddDefaultImplementationEntries>
+                            <AddDefaultSpecificationEntries>true</AddDefaultSpecificationEntries>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>assemble-all</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>assemble-for-jib</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/jib</outputDirectory>
+                            <finalName>${project.artifactId}</finalName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.4.6</version> <!-- >= 3.4.3 hangs at 80% when building image! -->
+                <executions>
+                    <execution>
+                        <id>docker-local</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>dockerBuild</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <phase>deploy</phase>
+                        <goals>
+                            <goal>build</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <from>
+                        <image>docker.io/camunda/zeebe:${version.zeebe}</image>
+                    </from>
+                    <to>
+                        <image>ghcr.io/camunda-community-hub/zeebe-with-kafka-exporter</image>
+                        <tags>
+                            <tag>${version.zeebe}-${project.version}</tag>
+                            <tag>${version.zeebe}</tag>
+                        </tags>
+                    </to>
+                    <container>
+                        <entrypoint>INHERIT</entrypoint>
+                        <ports>
+                            <port>26500</port>
+                            <port>9600</port>
+                        </ports>
+                        <environment>
+                            <ZEEBE_BROKER_EXPORTERS_KAFKA_CLASSNAME>io.zeebe.kafka.exporter.KafkaExporter
+                            </ZEEBE_BROKER_EXPORTERS_KAFKA_CLASSNAME>
+                            <ZEEBE_BROKER_EXPORTERS_KAFKA_JARPATH>
+                                exporters/zeebe-kafka-exporter-jar-with-dependencies.jar
+                            </ZEEBE_BROKER_EXPORTERS_KAFKA_JARPATH>
+                        </environment>
+                    </container>
+                    <extraDirectories>
+                        <paths>
+                            <path>
+                                <from>${project.build.directory}/jib</from>
+                                <into>/usr/local/zeebe/exporters</into>
+                            </path>
+                        </paths>
+                    </extraDirectories>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <!-- Override java source version to workaround javadoc bug https://bugs.openjdk.java.net/browse/JDK-8212233 -->
+                    <source>8</source>
+                </configuration>
+            </plugin>
+
+            <!-- Google code format plugin -->
+            <plugin>
+                <groupId>com.spotify.fmt</groupId>
+                <artifactId>fmt-maven-plugin</artifactId>
+                <version>${plugin.version.maven-fmt}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.sonatype.plugins</groupId>
+                    <artifactId>nexus-staging-maven-plugin</artifactId>
+                    <version>1.7.0</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
+    <profiles>
+        <profile>
+            <id>community-action-maven-release</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.8</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <!-- Prevent gpg from using pinentry programs -->
+                            <gpgArguments>
+                                <arg>--pinentry-mode</arg>
+                                <arg>loopback</arg>
+                            </gpgArguments>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+
+    <repositories>
+        <repository>
+            <id>zeebe</id>
+            <name>Zeebe Repository</name>
+            <url>https://artifacts.camunda.com/artifactory/zeebe-io/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+
+        <repository>
+            <id>zeebe-snapshots</id>
+            <name>Zeebe Snapshot Repository</name>
+            <url>https://artifacts.camunda.com/artifactory/zeebe-io-snapshots/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+    </repositories>
+
+    <scm>
+        <url>https://github.com/janrohwer/zeebe-kafka-exporter</url>
+        <connection>scm:git:git@github.com:janrohwer/zeebe-kafka-exporter.git</connection>
+        <developerConnection>scm:git:git@github.com:janrohwer/zeebe-kafka-exporter.git
+        </developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+</project>
