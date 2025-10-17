@@ -33,7 +33,6 @@ public class ExporterConfiguration {
   private Map<String, String> additionalProperties = new HashMap<>();
 
   // Exporter specific configuration
-  private int batchSize = 250;
   private int batchCycleMillis = 500;
 
   public String getFormat() {
@@ -107,10 +106,6 @@ public class ExporterConfiguration {
     return additionalProperties;
   }
 
-  public int getBatchSize() {
-    return getEnv("BATCH_SIZE").map(Integer::parseInt).orElse(batchSize);
-  }
-
   public int getBatchCycleMillis() {
     return getEnv("BATCH_CYCLE_MILLIS").map(Integer::parseInt).orElse(batchCycleMillis);
   }
@@ -154,8 +149,6 @@ public class ExporterConfiguration {
         + ", compressionType='"
         + getCompressionType()
         + '\''
-        + ", batchSize="
-        + getBatchSize()
         + ", batchCycleMillis="
         + getBatchCycleMillis()
         + ']';

@@ -95,9 +95,8 @@ public class KafkaExporter implements Exporter {
     this.controller = controller;
 
     logger.info(
-        "Initializing Kafka producer with configuration: bootstrapServers={}, batchSize={}, batchCycleMillis={}",
+        "Initializing Kafka producer with configuration: bootstrapServers={}, batchCycleMillis={}",
         config.getBootstrapServers().get(),
-        config.getBatchSize(),
         config.getBatchCycleMillis());
 
     connectToKafka();
@@ -133,9 +132,7 @@ public class KafkaExporter implements Exporter {
     // upon successful connection initialize the sender
     if (kafkaSender == null && kafkaProducer != null) {
       logger.debug(
-          "Initializing Kafka sender with batch size {} and cycle {} milliseconds",
-          config.getBatchSize(),
-          config.getBatchCycleMillis());
+          "Initializing Kafka sender with cycle {} milliseconds", config.getBatchCycleMillis());
       kafkaSender = new KafkaSender(config, controller, kafkaProducer, meterRegistry, logger);
       senderThread.schedule(this::sendBatches, config.getBatchCycleMillis(), TimeUnit.MILLISECONDS);
     }

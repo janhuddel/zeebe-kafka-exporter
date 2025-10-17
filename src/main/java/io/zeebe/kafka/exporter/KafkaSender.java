@@ -66,22 +66,22 @@ public class KafkaSender {
         ProducerRecord<String, byte[]> record =
             new ProducerRecord<>(eventValue.topic, eventValue.key, valueBytes);
 
-        // Send asynchronously with callback - let Kafka handle batching internally
+        // Send synchronously to ensure ordered position updates
         final Long recordPosition = nextEvent.getKey();
-        kafkaProducer.send(
-            record,
-            (metadata, exception) -> {
-              if (exception == null) {
-                controller.updateLastExportedRecordPosition(recordPosition);
-                logger.debug(
-                    "Successfully sent record to topic {} partition {}",
-                    metadata.topic(),
-                    metadata.partition());
-              } else {
-                logger.error("Failed to send record to Kafka", exception);
-                kafkaMetrics.recordFailedFlush();
-              }
-            });
+        try {
+          var future = kafkaProducer.send(record);
+          var metadata = future.get(); // Block until sent
+          controller.updateLastExportedRecordPosition(recordPosition);
+          logger.debug(
+              "Successfully sent record to topic {} partition {}",
+              metadata.topic(),
+              metadata.partition());
+        } catch (Exception ex) {
+          logger.error("Failed to send record to Kafka", ex);
+          kafkaMetrics.recordFailedFlush();
+          // Don't update position on failure - this ensures no data loss
+          break; // Stop processing more records on failure
+        }
 
         positionOfLastRecordInBatch = nextEvent.getKey();
         recordBulkSize++;
